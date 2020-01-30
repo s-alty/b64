@@ -2,39 +2,36 @@
 -export([encode/1, decode/1]).
 
 
-encode(Bytes) when is_binary(Bytes) -> encode1(Bytes, []).
-
-encode1(<<>>, Digits) -> lists:reverse(Digits);
-encode1(<<Sextet:6, Rest/bits>>, Digits) -> encode1(Rest, [todigit(Sextet)|Digits]);
-encode1(Remainder, Digits) ->
+encode(Bytes) when is_binary(Bytes)     -> encode(Bytes, []).
+encode(<<>>, Digits)                    -> lists:reverse(Digits);
+encode(<<Sextet:6, Rest/bits>>, Digits) -> encode(Rest, [todigit(Sextet)|Digits]);
+encode(Remainder, Digits)               ->
     %% less than 6 bits remain, so we need padding characters
     %% if 4 bits remain -> pad with two 0 bits and add one padding character to output
     %% if 2 bits remain -> pad with four 0 bits and add two padding characters to output
     case bit_size(Remainder) of
         4 ->
             <<Sextet:6>> = <<Remainder/bits, 0:2>>,
-            encode1(<<>>, [$=,todigit(Sextet)|Digits]);
+            encode(<<>>, [$=,todigit(Sextet)|Digits]);
         2 ->
             <<Sextet:6>> = <<Remainder/bits, 0:4>>,
-            encode1(<<>>, [$=,$=,todigit(Sextet)|Digits])
+            encode(<<>>, [$=,$=,todigit(Sextet)|Digits])
     end.
 
 
-
-decode(Text) -> decode1(Text, <<>>).
-
-decode1([], Bytes) -> Bytes;
-decode1("==", Bits) ->
+decode(Text)           -> decode(Text, <<>>).
+decode([], Bytes)      -> Bytes;
+decode("==", Bits)     ->
     Len = (bit_size(Bits) - 4) div 8,
     <<Bytes:Len/binary, 0:4>> = Bits,
     Bytes;
-decode1("=", Bits) ->
+decode("=", Bits)      ->
     Len = (bit_size(Bits) - 2) div 8,
     <<Bytes:Len/binary, 0:2>> = Bits,
     Bytes;
-decode1([C|Rest], Bits) ->
+decode([C|Rest], Bits) ->
     Decoded = fromdigit(C),
-    decode1(Rest, <<Bits/bits, Decoded:6>>).
+    decode(Rest, <<Bits/bits, Decoded:6>>).
 
 
 todigit(2#000000) -> $A;
