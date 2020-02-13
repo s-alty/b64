@@ -16,7 +16,7 @@ Its support for pattern matching against binary data removes the need
 for tedious masking operations.
 
 #+BEGIN_SRC erlang
-encode(<<Sextet:6, Rest/bits>>, Digits) -> encode(Rest, [todigit(Sextet)|Digits]);
+encode(<<Sextet:6, Rest/bits>>) -> [todigit(Sextet)|encode(Rest)];
 #+END_SRC
 
 In the snippet above a group of six bits is being split off of a larger

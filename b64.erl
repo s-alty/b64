@@ -1,21 +1,19 @@
 -module(b64).
 -export([encode/1, decode/1]).
 
-
-encode(Bytes) when is_binary(Bytes)     -> encode(Bytes, []).
-encode(<<>>, Digits)                    -> lists:reverse(Digits);
-encode(<<Sextet:6, Rest/bits>>, Digits) -> encode(Rest, [todigit(Sextet)|Digits]);
-encode(Remainder, Digits)               ->
+encode(<<>>)                    -> [];
+encode(<<Sextet:6, Rest/bits>>) -> [todigit(Sextet)|encode(Rest)];
+encode(Remainder)               ->
     %% less than 6 bits remain, so we need padding characters
     %% if 4 bits remain -> pad with two 0 bits and add one padding character to output
     %% if 2 bits remain -> pad with four 0 bits and add two padding characters to output
     case bit_size(Remainder) of
         4 ->
             <<Sextet:6>> = <<Remainder/bits, 0:2>>,
-            encode(<<>>, [$=,todigit(Sextet)|Digits]);
+            [todigit(Sextet),$=|encode(<<>>)];
         2 ->
             <<Sextet:6>> = <<Remainder/bits, 0:4>>,
-            encode(<<>>, [$=,$=,todigit(Sextet)|Digits])
+            [todigit(Sextet),$=,$=|encode(<<>>)]
     end.
 
 
