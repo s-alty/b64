@@ -1,0 +1,49 @@
+* Base64
+Base64 is a way to represent binary data using printable alphanumeric characters.
+
+The encoding maps each group of six bits (sextets) to a single character.
+
+It follows that 3 bytes (24 bits) can be represented by 4 characters.
+
+If the total number of bytes to be encoded is not divisible by three,
+then additional padding characters (~=~) are appended to the output.
+
+** Working with binary data in Erlang
+Erlang's unique bitstring language feature makes it particularly well-suited
+for implementing base64.
+
+Its support for pattern matching against binary data removes the need
+for tedious masking operations.
+
+#+BEGIN_SRC erlang
+encode(<<Sextet:6, Rest/bits>>, Digits) -> encode(Rest, [todigit(Sextet)|Digits]);
+#+END_SRC
+
+In the snippet above a group of six bits is being split off of a larger
+chunk of binary data. This works even when the ~Rest~ is not cleanly divisible by 8.
+
+~todigit~ simply maps each possible arragement of six bits
+to the corresponding character.
+
+#+BEGIN_SRC erlang
+todigit(2#000000) -> $A;
+todigit(2#000001) -> $B;
+...
+#+END_SRC
+
+Decoding works in a similar way.
+
+#+BEGIN_SRC erlang
+decode([C|Rest], Bits) ->
+    Decoded = fromdigit(C),
+    decode(Rest, <<Bits/bits, Decoded:6>>).
+#+END_SRC
+
+A bitstring is built up 6 bits at a time, by mapping each character
+to the appropriate bit pattern.
+
+#+BEGIN_SRC erlang
+fromdigit($A) -> 2#000000;
+fromdigit($B) -> 2#000001;
+...
+#+END_SRC
